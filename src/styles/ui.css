@@ -245,3 +245,11 @@ kbd{display:inline-block;min-width:22px;padding:.15rem .35rem;border:1px solid v
 #guide-arrow{position:fixed;z-index:27;left:0;top:0;color:var(--accent);pointer-events:none;
   filter:drop-shadow(0 0 10px currentColor);animation:arrowPulse 1.4s ease-in-out infinite;}
 @keyframes arrowPulse{0%,100%{opacity:.75;}50%{opacity:1;}}
+
+/* ============================= WORLD TRANSITION ============================= */
+#fade{position:fixed;inset:0;z-index:70;background:#05070a;opacity:0;pointer-events:none;
+  display:grid;place-items:center;}
+.fade-title{text-align:center;animation:ftIn .6s var(--ease);}
+.fade-title .ft-main{font-family:"Space Grotesk";font-weight:700;font-size:clamp(1.8rem,5vw,3rem);color:#eef3f0;letter-spacing:-.02em;}
+.fade-title .ft-sub{font-family:"JetBrains Mono";font-size:.8rem;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin-top:.6rem;}
+@keyframes ftIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}

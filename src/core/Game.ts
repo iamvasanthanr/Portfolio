@@ -1,40 +1,58 @@
 /**
  * core/Game.ts
- * Owns the renderer, post-processing (bloom), and the main loop. Wires the
- * world, player, collectibles, input, the guided story (Quest), the waypoint
- * beacon + on-screen arrow, the interaction prompt, HUD and panel.
+ * Owns the renderer, post-processing (bloom), and the main loop. Drives a
+ * guided story where each chapter is its OWN themed world: finishing a chapter
+ * fades to black, swaps the world (park -> Times Square -> living room -> lab ->
+ * contact), respawns the player, and fades back in.
  */
 
 import {
-  WebGLRenderer, PerspectiveCamera, Vector3, Vector2, Clock,
+  WebGLRenderer, PerspectiveCamera, Vector2, Clock,
   PCFSoftShadowMap, ACESFilmicToneMapping,
 } from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { World, type Interactable } from '../world/World';
+import { WorldManager } from '../world/WorldManager';
+import type { Interactable, WorldScene } from '../world/WorldScene';
 import { Beacon } from '../world/Beacon';
 import { Player } from '../entities/Player';
 import { Collectibles } from '../entities/Collectibles';
 import { Input } from './Input';
 import { Panel } from '../ui/Panel';
 import { Quest } from '../quest/Quest';
+import { Transition } from './Transition';
 import { PROJECTS, type SectorKey } from '../data/projects';
+
+// per-world chapter titles shown on the black transition screen
+const WORLD_TITLE: Record<SectorKey, [string, string]> = {
+  kindle: ['The Park', 'Kindle'],
+  ads: ['Times Square', 'Amazon Advertising'],
+  prime: ['Home', 'Prime Video'],
+  agents: ['The Lab', 'Agentic AI'],
+  contact: ['The Clearing', 'Get in touch'],
+  about: ['The Park', 'About me'],
+};
 
 export class Game {
   private renderer: WebGLRenderer;
   private composer: EffectComposer;
+  private renderPass: RenderPass;
   private camera: PerspectiveCamera;
-  private world: World;
+  private wm: WorldManager;
   private player: Player;
   private collectibles: Collectibles;
   private input: Input;
   private panel: Panel;
   private quest: Quest;
   private beacon: Beacon;
+  private fade: Transition;
   private clock = new Clock();
 
   private near: Interactable | null = null;
+  private lastOpened: SectorKey | null = null;
+  private currentWorldKey: SectorKey | null = null;
+  private swapping = false;
   private promptEl = document.getElementById('prompt') as HTMLElement;
   private promptText = document.getElementById('promptText') as HTMLElement;
   private arrowEl!: HTMLElement;
@@ -52,24 +70,20 @@ export class Game {
     this.camera = new PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 300);
     this.camera.position.set(0, 7, 16);
 
-    this.world = new World();
+    this.wm = new WorldManager();
     this.player = new Player(this.camera);
-    this.world.scene.add(this.player.group);
-
     this.beacon = new Beacon();
-    this.world.scene.add(this.beacon.group);
+    this.collectibles = new Collectibles([]);
+    this.fade = new Transition();
 
-    this.collectibles = new Collectibles([
-      new Vector3(-14, 0, -6), new Vector3(10, 0, -4), new Vector3(-20, 0, 8),
-      new Vector3(16, 0, 10), new Vector3(0, 0, -12), new Vector3(-6, 0, 14),
-      new Vector3(22, 0, -10), new Vector3(-30, 0, 24),
-    ]);
-    this.world.scene.add(this.collectibles.group);
+    // persistent actors live in the scene across world swaps
+    this.wm.scene.add(this.player.group, this.beacon.group, this.collectibles.group);
 
-    // ----- post-processing: bloom for that glowing 2026 look -----
+    // post-processing
     this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.world.scene, this.camera));
-    const bloom = new UnrealBloomPass(new Vector2(innerWidth, innerHeight), 0.6, 0.8, 0.85);
+    this.renderPass = new RenderPass(this.wm.scene, this.camera);
+    this.composer.addPass(this.renderPass);
+    const bloom = new UnrealBloomPass(new Vector2(innerWidth, innerHeight), 0.5, 0.7, 0.9);
     this.composer.addPass(bloom);
     this.composer.setSize(innerWidth, innerHeight);
 
@@ -78,6 +92,17 @@ export class Game {
     this.quest = new Quest();
     this.buildArrow();
     this.wireUi();
+
+    // load the first world so there is something to render under the intro
+    this.enterWorld('kindle', false);
+
+    // dev-only tour hook: open the current world's prop panel programmatically
+    if (location.search.includes('play')) {
+      (window as unknown as { __advance: () => void }).__advance = () => {
+        this.lastOpened = this.wm.current.interactable.key;
+        this.panel.open(this.lastOpened);
+      };
+    }
 
     addEventListener('resize', this.onResize);
   }
@@ -90,6 +115,21 @@ export class Game {
     document.body.appendChild(this.arrowEl);
   }
 
+  /** Build a world, place the player + collectibles, aim the beacon. */
+  private enterWorld(key: SectorKey, fromSwap: boolean): WorldScene {
+    const w = this.wm.load(key);
+    this.currentWorldKey = key;
+    // re-add persistent actors (scene.add is idempotent-ish; ensure present)
+    this.wm.scene.add(this.player.group, this.beacon.group, this.collectibles.group);
+    this.player.respawn(w.spawn);
+    this.collectibles.reset(w.collectibleSpots);
+    this.beacon.setColor(PROJECTS[w.interactable.key].accent);
+    this.beacon.moveTo(w.interactable.position);
+    this.renderPass.scene = this.wm.scene;
+    void fromSwap;
+    return w;
+  }
+
   private wireUi() {
     const hud = document.getElementById('hud')!;
     const collect = document.getElementById('collect')!;
@@ -97,63 +137,68 @@ export class Game {
     const intro = document.getElementById('intro')!;
     const collectCount = document.getElementById('collectCount')!;
     const collectTotal = document.getElementById('collectTotal')!;
-    collectTotal.textContent = String(this.collectibles.total);
 
     const startGame = () => {
       intro.classList.add('hide');
       hud.hidden = false; collect.hidden = false;
       if (matchMedia('(hover: none)').matches) touch.hidden = false;
-      this.quest.begin(); // kick off the story
+      collectTotal.textContent = String(this.collectibles.total);
+      this.quest.begin();
     };
     document.getElementById('startBtn')?.addEventListener('click', startGame);
-    if (location.search.includes('play')) setTimeout(startGame, 200); // TEMP debug
+    if (location.search.includes('play')) setTimeout(startGame, 200);
     document.getElementById('helpBtn')?.addEventListener('click', () => intro.classList.remove('hide'));
 
-    const dayBtn = document.getElementById('dayBtn')!;
-    dayBtn.addEventListener('click', () => {
-      const name = this.world.cycleSky();
-      dayBtn.textContent = name === 'night' ? '\u{1F319}' : name === 'dusk' ? '\u{1F305}' : '\u2600\uFE0F';
+    // day/night button now re-themes nothing per-world; keep as a no-op-ish exposure toggle
+    const dayBtn = document.getElementById('dayBtn');
+    if (dayBtn) dayBtn.addEventListener('click', () => {
+      this.renderer.toneMappingExposure = this.renderer.toneMappingExposure > 0.8 ? 0.6 : 1.1;
     });
 
     this.collectibles.onCollect = (c, total) => {
       collectCount.textContent = String(c);
       collect.animate([{ transform: 'scale(1.25)' }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
-      if (c === total) this.toast('\u2b50 You found every star!', 'Nice exploring. There is more to read all around.');
+      void total;
     };
 
     this.input.onAction = () => {
-      if (this.near && !this.panel.isOpen && !this.quest.isNarrating) {
+      if (this.near && !this.panel.isOpen && !this.quest.isNarrating && !this.swapping) {
         this.lastOpened = this.near.key;
         this.panel.open(this.near.key);
       }
     };
     this.input.onEscape = () => this.panel.close();
-
-    // when a sector panel closes, tell the quest (advances the story if it was the objective)
     this.panel.onClose = () => { if (this.lastOpened) this.quest.completeSector(this.lastOpened); this.lastOpened = null; };
 
-    // when a narration card is dismissed, move the beacon to the new target
-    this.quest.onResume = () => this.syncBeacon();
+    // when a narration card is dismissed, swap worlds if the target changed
+    this.quest.onResume = () => this.onQuestResume();
   }
 
-  private lastOpened: SectorKey | null = null;
+  private async onQuestResume() {
+    const key = this.quest.target;
+    if (!key) { this.beacon.moveTo(null); this.arrowEl.hidden = true; return; }
+    // same world as current? just make sure the beacon points at the prop.
+    const targetWorld = key === 'about' ? 'kindle' : key;
+    if (targetWorld === this.currentWorldKey) { this.syncBeacon(); return; }
+    // different world: cinematic dissolve
+    this.swapping = true;
+    collectTotalRefresh(this.collectibles);
+    await this.fade.fadeOut(650);
+    const [main, sub] = WORLD_TITLE[key];
+    this.fade.title(main, sub, 1200);
+    this.enterWorld(targetWorld, true);
+    await new Promise((r) => setTimeout(r, 1250));
+    await this.fade.fadeIn(650);
+    this.swapping = false;
+    this.syncBeacon();
+  }
 
   private syncBeacon() {
     const key = this.quest.target;
     if (!key) { this.beacon.moveTo(null); this.arrowEl.hidden = true; return; }
-    const it = this.world.interactables.find((i) => i.key === key);
-    if (!it) return;
+    const it = this.wm.current.interactable;
     this.beacon.setColor(PROJECTS[key].accent);
     this.beacon.moveTo(it.position);
-  }
-
-  private toast(title: string, sub: string) {
-    const t = document.createElement('div');
-    t.id = 'toast';
-    t.innerHTML = `<div class="t">${title}</div><div class="s">${sub}</div>`;
-    document.body.appendChild(t);
-    requestAnimationFrame(() => t.classList.add('show'));
-    setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 4600);
   }
 
   private onResize = () => {
@@ -170,8 +215,9 @@ export class Game {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const t = this.clock.elapsedTime;
 
-    const canMove = !this.panel.isOpen && !this.quest.isNarrating;
-    if (canMove) { this.input.update(); this.player.update(dt, this.input, this.world.bounds); }
+    const canMove = !this.panel.isOpen && !this.quest.isNarrating && !this.swapping;
+    if (canMove) { this.input.update(); this.player.update(dt, this.input, this.wm.current.bounds); }
+    this.wm.update(dt, t);
     this.collectibles.update(dt, this.player.worldPos, t);
     this.beacon.update(dt, this.camera.position.distanceTo(this.beacon.group.position));
     this.updateInteraction();
@@ -181,39 +227,32 @@ export class Game {
   };
 
   private updateInteraction() {
-    let best: Interactable | null = null; let bestD = Infinity;
-    for (const it of this.world.interactables) {
-      const d = it.position.distanceTo(this.player.worldPos);
-      if (d < it.radius && d < bestD) { best = it; bestD = d; }
-    }
-    if (best !== this.near) {
-      this.near = best;
+    const it = this.wm.current?.interactable ?? null;
+    const near = it && it.position.distanceTo(this.player.worldPos) < it.radius ? it : null;
+    if (near !== this.near) {
+      this.near = near;
       const action = document.getElementById('touchAction');
-      if (best && !this.panel.isOpen) {
-        this.promptEl.hidden = false;
-        this.promptText.textContent = best.key === 'contact' ? 'contact' : best.key === 'about' ? 'read about me' : 'read';
+      if (near && !this.panel.isOpen) {
+        this.promptText.textContent = near.key === 'contact' ? 'contact' : 'read';
         action?.classList.add('live');
-      } else { this.promptEl.hidden = true; action?.classList.remove('live'); }
+      } else action?.classList.remove('live');
     }
-    if (this.near && !this.panel.isOpen && !this.quest.isNarrating) {
+    if (this.near && !this.panel.isOpen && !this.quest.isNarrating && !this.swapping) {
       const p = this.player.headScreenPosition(this.camera, innerWidth, innerHeight);
+      this.promptEl.hidden = false;
       this.promptEl.style.transform = `translate(-50%,-50%) translate(${p.x}px, ${p.y - 40}px)`;
     } else {
       this.promptEl.hidden = true;
     }
   }
 
-  /** The on-screen arrow points from the player toward the active objective. */
   private updateArrow() {
     const key = this.quest.target;
-    if (!key || this.panel.isOpen || this.quest.isNarrating) { this.arrowEl.hidden = true; return; }
-    const it = this.world.interactables.find((i) => i.key === key);
-    if (!it) { this.arrowEl.hidden = true; return; }
-
+    const it = this.wm.current?.interactable ?? null;
+    if (!key || !it || this.panel.isOpen || this.quest.isNarrating || this.swapping) { this.arrowEl.hidden = true; return; }
     const dist = it.position.distanceTo(this.player.worldPos);
-    if (dist < it.radius + 1) { this.arrowEl.hidden = true; return; } // arrived
+    if (dist < it.radius + 1) { this.arrowEl.hidden = true; return; }
 
-    // project the target to screen; if off-screen or behind, pin arrow to edge
     const tp = it.position.clone(); tp.y = 2;
     const v = tp.clone().project(this.camera);
     const onScreen = v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1;
@@ -221,16 +260,20 @@ export class Game {
     let sx = (v.x * 0.5 + 0.5) * innerWidth;
     let sy = (-v.y * 0.5 + 0.5) * innerHeight;
     if (!onScreen || v.z >= 1) {
-      // direction from center, flip if behind camera
       let dx = sx - cx, dy = sy - cy;
       if (v.z >= 1) { dx = -dx; dy = -dy; }
-      const ang = Math.atan2(dy, dx);
-      const rx = innerWidth * 0.4, ry = innerHeight * 0.4;
-      sx = cx + Math.cos(ang) * rx; sy = cy + Math.sin(ang) * ry;
+      const a = Math.atan2(dy, dx);
+      sx = cx + Math.cos(a) * innerWidth * 0.4; sy = cy + Math.sin(a) * innerHeight * 0.4;
     }
-    const ang = Math.atan2(sy - cy, sx - cx) + Math.PI / 2; // svg points up by default
+    const ang = Math.atan2(sy - cy, sx - cx) + Math.PI / 2;
     this.arrowEl.hidden = false;
     this.arrowEl.style.transform = `translate(-50%,-50%) translate(${sx}px,${sy}px) rotate(${ang}rad)`;
     this.arrowEl.style.color = '#' + PROJECTS[key].accent.toString(16).padStart(6, '0');
   }
+}
+
+// keep the HUD star total in sync when a world changes the collectible count
+function collectTotalRefresh(c: Collectibles) {
+  const el = document.getElementById('collectTotal');
+  if (el) el.textContent = String(c.total);
 }

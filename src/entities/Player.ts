@@ -7,7 +7,7 @@
 
 import {
   Group, Mesh, MeshStandardMaterial, CapsuleGeometry, SphereGeometry, BoxGeometry,
-  CylinderGeometry, PerspectiveCamera, Vector3, Vector2, MathUtils,
+  CylinderGeometry, PerspectiveCamera, Vector3, Vector2, MathUtils, PointLight,
 } from 'three';
 import type { Input } from '../core/Input';
 
@@ -80,10 +80,25 @@ export class Player {
     const bootR = new Mesh(new BoxGeometry(0.34, 0.2, 0.5), boots); bootR.position.set(0, -0.42, 0.1); this.legR.add(bootR);
 
     this.group.add(torso, scarfM, pack, head, hairMesh, nose, this.armL, this.armR, this.legL, this.legR);
+
+    // soft fill light that travels with the player, so they stay readable
+    // even in the dark worlds (night city, lab). Small range, won't flood the scene.
+    const fill = new PointLight(0xfff0dd, 6, 9, 2);
+    fill.position.set(0, 3.2, 0);
+    this.group.add(fill);
   }
 
   /** world-space position (for proximity checks) */
   get worldPos(): Vector3 { return this.position; }
+
+  /** place the player at a world's spawn point and reset motion */
+  respawn(spawn: Vector3) {
+    this.position.copy(spawn);
+    this.velocity.set(0, 0, 0);
+    this.group.position.copy(this.position);
+    this.facing = Math.PI; // face away from camera (into the scene)
+    this.group.rotation.y = this.facing;
+  }
 
   update(dt: number, input: Input, bounds: { minX: number; maxX: number; minZ: number; maxZ: number }) {
     // ----- camera orbit from pointer drag -----
