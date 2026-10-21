@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+<title>Vasanthan R, Explore My Work (3D World)</title>
+<meta name="description" content="Walk through a real-time 3D world (Three.js) to explore Vasanthan R's work. SDE-2 at Amazon: backend, distributed systems and agentic AI." />
+<meta name="theme-color" content="#0a1410" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Vasanthan R, Explore My Work (3D World)" />
+<meta property="og:description" content="A real-time 3D portfolio world built with Three.js and TypeScript. Walk up to the book, TV, billboard and lab to read each project." />
+<meta property="og:image" content="og-cover.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129517;</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/src/styles/ui.css" />
+</head>
+<body>
+  <!-- The WebGL canvas is created and mounted by Three.js (src/core/Game.ts) -->
+  <div id="app"></div>
+
+  <!-- Loading screen (hidden once assets + first frame are ready) -->
+  <div id="loader">
+    <div class="loader-inner">
+      <div class="spinner"></div>
+      <div class="loader-title">Building the world</div>
+      <div class="loader-sub" id="loaderSub">Starting the engine...</div>
+    </div>
+  </div>
+
+  <!-- HUD (overlaid on the canvas) -->
+  <header id="hud" hidden>
+    <div class="hud-name">
+      <div class="n">&#9889; Vasanthan R</div>
+      <div class="r">SDE-2 @ Amazon &middot; walk around to explore</div>
+    </div>
+    <div class="hud-actions">
+      <button class="hud-btn" id="helpBtn" title="Controls">? Controls</button>
+      <button class="hud-btn" id="dayBtn" title="Day / night">&#9728;&#65039;</button>
+      <a class="hud-btn" id="classicBtn" href="classic.html">Classic view</a>
+      <a class="hud-btn primary" id="resumeBtn" href="resume.pdf" download>&#11015; Resume</a>
+    </div>
+  </header>
+
+  <!-- Collectible counter -->
+  <div id="collect" hidden>
+    <span class="c-ico">&#11088;</span>
+    <span id="collectCount">0</span> / <span id="collectTotal">0</span> found
+  </div>
+
+  <!-- Interaction prompt (shown when near something) -->
+  <div id="prompt" hidden><kbd id="promptKey">E</kbd> <span id="promptText">read</span></div>
+
+  <!-- On-screen joystick + action button (mobile) -->
+  <div id="touch" hidden>
+    <div id="joy"><div class="joy-base"></div><div class="joy-stick"></div></div>
+    <button id="touchAction">READ</button>
+  </div>
+
+  <!-- Intro overlay -->
+  <div id="intro">
+    <div class="intro-card">
+      <div class="intro-emoji">&#129517;</div>
+      <h1>Welcome to my world</h1>
+      <p>I am Vasanthan, an SDE-2 at Amazon. This is a real-time 3D world (built with Three.js).
+         Walk around and step up to the <b>book</b>, <b>TV</b>, <b>billboard</b> and <b>lab terminal</b> to read about each project.
+         Collect the glowing stars as you go.</p>
+      <div class="intro-keys">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / arrows to move</span>
+        <span><kbd>E</kbd> to read &middot; <kbd>Esc</kbd> to close</span>
+        <span>drag to look around</span>
+      </div>
+      <button id="startBtn">Start exploring</button>
+      <a class="intro-alt" href="classic.html">Prefer a plain scrollable page? Open the classic portfolio &rarr;</a>
+    </div>
+  </div>
+
+  <!-- Project panel (filled by src/ui/Panel.ts, reuses the signature animations) -->
+  <div id="panel" hidden role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+    <div class="panel-sheet">
+      <button class="panel-close" id="panelClose" aria-label="Close">&#10005;</button>
+      <div id="panelBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
