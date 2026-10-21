@@ -49,7 +49,7 @@ export const PROJECTS: Record<SectorKey, Project> = {
     ],
     story: {
       is:
-        'Every Kindle book carries a <strong>secret lock</strong> so it cannot be copied for free. Each lock is a small piece of code that scrambles the key. A <strong>2023 break-in</strong> cracked a batch of them, and after that engineers were <strong>hand-building each new lock</strong>, writing it twice (once per kind of device) and testing it, about <strong>2 months each</strong>, which left books exposed too long.',
+        'Every Kindle book carries a <strong>secret lock</strong> so it cannot be copied for free. Each lock is a small piece of code (an encryption algorithm) that scrambles the key. These were <strong>written and tuned by hand</strong>, one at a time, which was slow and did not scale.',
       own:
         'I built the <strong>system that makes those locks automatically</strong>. I designed it end to end (reviewed with a Principal Engineer) and wrote its two brains: the part that <strong>picks which building blocks to use</strong> and the part that <strong>assembles them into a finished, working lock</strong>, exposed as a simple on-demand service.',
       opt:
@@ -57,7 +57,7 @@ export const PROJECTS: Record<SectorKey, Project> = {
       impact:
         'A new lock went from a <strong>~2-month</strong> hand-built effort to <strong>under 30 days</strong>, backed by a library of <strong>70K+</strong> validated algorithms so the platform never runs out of fresh, distinct locks. Shipped across Kindle platforms to <strong>500K+</strong> devices.',
     },
-    tech: ['LLMs', 'Generative AI', 'C++ and Java auto-translate', 'Constraint-based selection', 'Serverless API', 'Compile-test-repair loop'],
+    tech: ['LLMs', 'Generative AI', 'LangChain', 'C++ and Java auto-translate', 'Weighted-scoring selector', 'Serverless API'],
   },
 
   prime: {
@@ -82,7 +82,7 @@ export const PROJECTS: Record<SectorKey, Project> = {
       impact:
         'End-to-end time <strong>3 hours to 8 minutes (97.8% faster)</strong>, <strong>~$1.3M/yr</strong> saved, <strong>50M+</strong> jobs migrated cleanly, and manual deployments <strong>down to 0</strong> via full automated testing and release. I also brought in <strong>AI spec-driven development</strong> that cut feature delivery from <strong>3 weeks to 1</strong>.',
     },
-    tech: ['Java', 'Python', 'Event-driven workflows', 'ECS Fargate', 'DynamoDB', 'AI spec-driven dev'],
+    tech: ['Java', 'Python', 'Event-driven DAG engine', 'ECS Fargate', 'DynamoDB', 'SageMaker', 'AI spec-driven dev'],
   },
 
   ads: {
@@ -91,23 +91,23 @@ export const PROJECTS: Record<SectorKey, Project> = {
     chip: 'Amazon Advertising, Contextual Targeting',
     title: 'Matching ads to what the page is actually about',
     lead:
-      'For contextual ads to be relevant, the system has to understand a page\u2019s content in any language and match the right ad to it. I worked on expanding that targeting beyond English and cutting the pipeline that powers it.',
+      'Contextual ads only work if the system understands a page in any language and matches the right ad. I expanded that targeting beyond English and made the pipeline behind it much faster, serving 500M+ customers at 1,500 requests a second.',
     metrics: [
       ['40 to 70%', 'ad match rate'],
-      ['~60%', 'faster pipeline'],
+      ['76h to 30h', 'pipeline latency'],
       ['+68%', 'site coverage'],
     ],
     story: {
       is:
-        'Contextual targeting reads the <strong>keywords and topics</strong> of a page and matches ads that genuinely fit. The challenge: it only worked well in <strong>English</strong>, and the pipeline that generated the targeting signals was slow.',
+        'Contextual targeting reads the <strong>keywords and topics</strong> of a web page and matches ads that genuinely fit, at <strong>500M+ customers</strong>, <strong>1,500 requests/sec</strong> and <strong>150M+ ad requests a day</strong>. The catch: it only worked well in <strong>English</strong>, and the pipeline that generated the targeting signals was slow.',
       own:
-        'I owned the <strong>multilingual expansion</strong>, extending keyword generation from English to <strong>8 more languages</strong>, plus the analysis and changes that cut the pipeline\u2019s latency and a <strong>dual-model design</strong> recommendation.',
+        'I <strong>expanded the matching from English to 8 more languages</strong>, ran a data-driven model comparison, and recommended a <strong>dual-model design</strong> (one English, one multilingual) that preserved English accuracy. I also cut the pipeline latency and the service startup time.',
       opt:
-        'I taught it to <strong>read a page in any language</strong> and pull out the words that matter (language analysis plus <strong>meaning-based matching</strong>, so it understands intent, not just exact words). I proposed running <strong>two smaller models</strong> (one for English, one for everything else) instead of one big one: same accuracy, but the service <strong>starts about 80% faster</strong>, and I rebuilt the slow data pipeline behind it.',
+        'I <strong>published predictions straight to a fast in-memory store (Redis)</strong> instead of a slow hand-off, which cut the pipeline from <strong>76 hours to 30 hours</strong>. I cut service <strong>startup time ~80%</strong> by <strong>packaging the model files into the container image</strong> instead of downloading them at boot.',
       impact:
-        'Pipeline latency <strong>76h to 30h (~60% faster)</strong>, <strong>ad-match rate 40% to 70%</strong>, and targeting coverage <strong>+68% (3.2M to 5.4M sites/day)</strong> as support went from English to 8 more languages.',
+        'Site coverage grew <strong>+68% (3.2M to 5.4M sites/day)</strong>, the <strong>ad-match rate went 40% to 70%</strong>, and the pipeline runs in <strong>under half the time</strong>, now across 9 languages.',
     },
-    tech: ['Python', 'NLP', 'Sentence embeddings', 'Dual-model design', 'ML data pipeline', '8+ languages'],
+    tech: ['Python', 'Transformer models', 'NLP', 'Dual-model design', 'Redis', 'Docker', '9 languages'],
   },
 
   agents: {
@@ -116,23 +116,23 @@ export const PROJECTS: Record<SectorKey, Project> = {
     chip: 'Agentic AI',
     title: 'AI agents that do the repetitive work',
     lead:
-      'A lot of engineering time goes to glue work, like pulling status from five different internal tools to write an on-call handover or a sprint report. I built AI agents that do it in seconds.',
+      'I build AI agents that do real engineering work: inspecting media quality and automating the glue work engineers hate. Two things stand out, a perception layer that lets agents "watch" video, and a toolkit that writes on-call handovers in seconds.',
     metrics: [
-      ['95%+', 'less manual effort'],
-      ['5', 'tools pulled from'],
+      ['~30x', 'lower AI cost'],
+      ['95%+', 'less manual toil'],
       ['4 teams', 'adopted it'],
     ],
     story: {
       is:
-        'Two <strong>AI agent workflows</strong>: one writes the weekly <strong>on-call handover</strong> by gathering from five internal systems (tickets, alerts, security and risk dashboards), the other generates <strong>sprint reports</strong> from the task tracker, each producing a clean, ready-to-share document.',
+        'On Prime Video I designed an <strong>AI perception layer</strong> (reviewed with a Principal Engineer) that lets AI agents <strong>inspect video, audio and subtitles</strong>, plus a shared <strong>agent toolkit</strong> used across <strong>8+ services</strong> that automates chores like the weekly on-call handover and sprint reports.',
       own:
-        'I designed and shipped the shared <strong>agent toolkit</strong> end to end and published it so the whole org could use it, and ran a knowledge-sharing session to get other teams adopting it.',
+        'I designed and built both end to end: the perception layer on an agent framework, and the toolkit that I <strong>published org-wide</strong> (adopted by <strong>4 teams</strong>). I ran a knowledge-sharing session to drive adoption.',
       opt:
-        'A "manager" agent asks all <strong>5 tools at once</strong> (in parallel), then an AI writes the answers up into one tidy report, replacing a manual copy-paste-summarize ritual. On Prime Video I also shipped <strong>5+ AI "inspector" agents</strong> that catch wrong-language, missing or out-of-sync subtitles, and ran delivery with a workflow where <strong>AI writes and reviews the code against a written spec</strong>.',
+        'The perception layer <strong>analyzes each video once and reuses it across 40 languages (40x saving)</strong>, runs agents only on the <strong>~3% of flagged assets</strong>, batches signals into one model call ($0.20 to $0.05) and caches results (hit rate <strong>5% to 60%</strong>), for about <strong>30x lower cost</strong>. I found <strong>69% of flagged defects were creative intent</strong> and built a vision+audio agent that separates them at <strong>84% precision</strong>, then cut per-job cost <strong>97% ($0.95 to $0.03)</strong> with a self-hosted open-source model.',
       impact:
-        'Manual effort cut <strong>95%+</strong> (about 1 hour down to under 1 minute), <strong>adopted by 4 teams</strong>, and the spec-driven approach let one engineer ship the output of 3 to 4 during the subtitle-platform rebuild.',
+        'The toolkit cut on-call handover effort <strong>95%</strong> (about an hour down to a minute) and helped resolve <strong>71 production tickets in 6 months</strong>; the perception work cut projected AI cost <strong>~30x</strong>. Agentic, spec-driven workflows now reshape how the team ships code.',
     },
-    tech: ['AI agents', 'Tool orchestration', 'LLMs', 'Spec-driven dev', 'Org-wide rollout'],
+    tech: ['AI agents', 'LLMs', 'Agent framework (Strands)', 'Model Context Protocol', 'Self-hosted LLM', 'Spec-driven dev'],
   },
 
   about: {
@@ -141,16 +141,17 @@ export const PROJECTS: Record<SectorKey, Project> = {
     chip: 'About',
     title: 'Hi, I\u2019m Vasanthan',
     lead:
-      'A Software Development Engineer (SDE-2) at Amazon with 5+ years across Kindle, Advertising and Prime Video. I build backend and distributed systems, lately a lot of agentic AI and LLM infrastructure.',
+      'Backend engineer with 5+ years at Amazon building durable distributed services, data platforms and AI infrastructure for 100M+ customers across Prime Video, Kindle and Advertising.',
     metrics: [
       ['5+', 'years at Amazon'],
       ['100M+', 'customers served'],
-      ['7', 'major projects'],
+      ['0-to-1', 'repeat builder'],
     ],
     rawBody:
-      '<div class="about-block"><strong>What I do:</strong> I turn slow, manual, expensive systems into fast, cheap, automatic ones (event-driven architectures, scale-to-zero services), and increasingly I design systems where <strong>AI agents do the heavy lifting</strong> while I own the architecture and the specs.</div>' +
-      '<div class="about-block"><strong>Journey:</strong> SDE-1 (Jun 2021 to Jun 2024, Kindle and Amazon Advertising), then SDE-2 (Jun 2024 to present, Prime Video). A repeat <strong>0-to-1 builder</strong>: content protection across 4 platforms, anti-piracy watermarking at 100M+ scale, a generative-AI framework for encryption algorithms, and agentic automation adopted across the org.</div>' +
-      '<div class="about-block"><strong>Toolkit:</strong> Java, Python, C/C++, TypeScript. AWS (Lambda, ECS/Fargate, DynamoDB, Step Functions, SQS/SNS, EventBridge). Distributed systems and event-driven architecture. Agentic AI, LLMs, RAG, NLP.</div>',
+      '<div class="about-block"><strong>What I do:</strong> a repeat <strong>0-to-1 builder</strong>. I led a ground-up rebuild of Prime Video\u2019s subtitle quality platform (97.8% faster, 99.4% cheaper), built greenfield anti-piracy and content-protection systems, a generative-AI algorithm framework, and agentic automation adopted across the org.</div>' +
+      '<div class="about-block"><strong>How I work:</strong> I pioneer <strong>AI-native engineering</strong> practices, with agents and spec-driven workflows that reshape how the team designs, reviews and ships code.</div>' +
+      '<div class="about-block"><strong>Journey:</strong> SDE-1 (Jun 2021 to Jun 2024, Kindle and Amazon Advertising), then SDE-2 (Jun 2024 to present, Prime Video and Advertising). B.Tech, College of Engineering Guindy (CGPA 9.39/10).</div>' +
+      '<div class="about-block"><strong>Toolkit:</strong> Java, Python, C/C++, Go, TypeScript, Node.js, SQL. AWS (ECS/Fargate, Lambda, Step Functions, EventBridge, DynamoDB, S3, Redis, OpenSearch, SageMaker, Bedrock). Distributed systems, workflow orchestration, idempotency, sharding. Agentic AI, LLMs, RAG, MCP, NLP.</div>',
   },
 
   contact: {
