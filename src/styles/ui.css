@@ -253,3 +253,12 @@ kbd{display:inline-block;min-width:22px;padding:.15rem .35rem;border:1px solid v
 .fade-title .ft-main{font-family:"Space Grotesk";font-weight:700;font-size:clamp(1.8rem,5vw,3rem);color:#eef3f0;letter-spacing:-.02em;}
 .fade-title .ft-sub{font-family:"JetBrains Mono";font-size:.8rem;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);margin-top:.6rem;}
 @keyframes ftIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+/* ============================= CONTACT CARD ============================= */
+.clinks{display:flex;flex-direction:column;gap:.7rem;margin-top:1rem;}
+.clink{display:flex;align-items:center;gap:.9rem;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:12px;padding:.9rem 1.1rem;transition:.2s var(--ease);text-decoration:none;color:var(--ink);}
+.clink:hover{border-color:var(--good);transform:translateX(4px);}
+.clink .big{flex:none;width:2rem;text-align:center;font-size:1.3rem;}
+.clink .t{font-weight:600;font-size:.95rem;}
+.clink .s{font-size:.78rem;color:var(--ink-dim);}

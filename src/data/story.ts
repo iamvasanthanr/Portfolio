@@ -20,50 +20,41 @@ export interface Chapter {
 
 export const STORY: Chapter[] = [
   {
-    label: 'Prologue',
+    label: 'Kindle',
     narration: [
       'Every big system starts the same way: one engineer, one hard problem.',
-      'This is the story of five years of them, across Amazon.',
-      'Take a walk with me. Follow the glowing marker.',
-    ],
-    objective: 'Head to the park',
-    target: 'kindle',
-  },
-  {
-    label: 'Chapter 1 - Kindle',
-    narration: [
+      'This is the story of five years of them, across Amazon. Take a walk with me.',
       'It began at Kindle, protecting the books people love.',
-      'The locks that keep e-books safe were being written by hand, one at a time, and it was slow.',
-      'So I taught an AI to invent, test and translate them on its own.',
-      'Open the book under the tree to read how.',
+      'The locks that keep e-books safe were written by hand, one at a time, and it was slow.',
+      'So I taught an AI to invent, test and translate them on its own. Go read how.',
     ],
-    objective: 'Read the book in the park',
+    objective: 'Walk to the book and read it',
     target: 'kindle',
   },
   {
-    label: 'Chapter 2 - Advertising',
+    label: 'Advertising',
     narration: [
       'Next, Amazon Advertising.',
-      'Ads only work when they fit the page. They only fit in English.',
+      'Ads only work when they fit the page, and they only fit in English.',
       'I taught the system to read any language and match the right ad.',
-      'Follow the marker to the billboard on Ad Street.',
+      'Follow the marker to the billboard.',
     ],
-    objective: 'Reach the billboard on Ad Street',
+    objective: 'Reach the billboard and read it',
     target: 'ads',
   },
   {
-    label: 'Chapter 3 - Prime Video',
+    label: 'Prime Video',
     narration: [
       'Then came Prime Video, and the moment that matters most:',
       'a family sits down, presses play, and the subtitles had better be right.',
       'I rebuilt the system that checks every subtitle before they ever see it.',
-      'Head home. Switch on the TV in the living room.',
+      'Head home and switch on the TV.',
     ],
     objective: 'Go home and switch on the TV',
     target: 'prime',
   },
   {
-    label: 'Chapter 4 - Agentic AI',
+    label: 'Agentic AI',
     narration: [
       'And now, the frontier: teaching AI agents to do the work itself.',
       'Little helpers that gather, decide and write, so engineers do not have to.',
@@ -73,7 +64,7 @@ export const STORY: Chapter[] = [
     target: 'agents',
   },
   {
-    label: 'Epilogue',
+    label: 'Get in touch',
     narration: [
       'That is the journey so far: Kindle, Advertising, Prime Video, and agentic AI.',
       'Five years, 100M+ customers, a lot of problems turned into systems.',
@@ -89,7 +80,7 @@ export const STORY: Chapter[] = [
       'Thanks for walking through my work.',
       'Grab my resume, or say hi. The stars are yours to keep exploring.',
     ],
-    objective: 'Free roam - explore anything you missed',
+    objective: 'Free roam, explore anything you missed',
     target: null,
   },
 ];

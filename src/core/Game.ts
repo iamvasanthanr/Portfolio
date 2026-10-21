@@ -26,12 +26,12 @@ import { PROJECTS, type SectorKey } from '../data/projects';
 
 // per-world chapter titles shown on the black transition screen
 const WORLD_TITLE: Record<SectorKey, [string, string]> = {
-  kindle: ['The Park', 'Kindle'],
-  ads: ['Times Square', 'Amazon Advertising'],
-  prime: ['Home', 'Prime Video'],
-  agents: ['The Lab', 'Agentic AI'],
-  contact: ['The Clearing', 'Get in touch'],
-  about: ['The Park', 'About me'],
+  kindle: ['Kindle', 'Content Protection'],
+  ads: ['Amazon Advertising', 'Contextual Targeting'],
+  prime: ['Prime Video', 'Subtitle Quality'],
+  agents: ['Agentic AI', 'Automation'],
+  contact: ['Get in touch', 'Let\u2019s build together'],
+  about: ['Kindle', 'About me'],
 };
 
 export class Game {
@@ -216,7 +216,7 @@ export class Game {
     const t = this.clock.elapsedTime;
 
     const canMove = !this.panel.isOpen && !this.quest.isNarrating && !this.swapping;
-    if (canMove) { this.input.update(); this.player.update(dt, this.input, this.wm.current.bounds); }
+    if (canMove) { this.input.update(); this.player.update(dt, this.input, this.wm.current.bounds, this.wm.current.groundHeightAt?.bind(this.wm.current)); }
     this.wm.update(dt, t);
     this.collectibles.update(dt, this.player.worldPos, t);
     this.beacon.update(dt, this.camera.position.distanceTo(this.beacon.group.position));

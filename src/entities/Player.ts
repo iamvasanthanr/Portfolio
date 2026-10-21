@@ -100,7 +100,7 @@ export class Player {
     this.group.rotation.y = this.facing;
   }
 
-  update(dt: number, input: Input, bounds: { minX: number; maxX: number; minZ: number; maxZ: number }) {
+  update(dt: number, input: Input, bounds: { minX: number; maxX: number; minZ: number; maxZ: number }, heightAt?: (x: number, z: number) => number) {
     // ----- camera orbit from pointer drag -----
     const look = input.consumeLook();
     this.camYaw -= look.x * 0.005;
@@ -124,6 +124,9 @@ export class Player {
     this.position.addScaledVector(this.velocity, dt);
     this.position.x = MathUtils.clamp(this.position.x, bounds.minX, bounds.maxX);
     this.position.z = MathUtils.clamp(this.position.z, bounds.minZ, bounds.maxZ);
+    // follow terrain height (ramps/stairs) if the world provides it
+    const targetY = heightAt ? heightAt(this.position.x, this.position.z) : 0;
+    this.position.y = MathUtils.damp(this.position.y, targetY, 12, dt);
     this.group.position.copy(this.position);
 
     // face the direction of travel

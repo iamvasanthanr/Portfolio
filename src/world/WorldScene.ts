@@ -32,6 +32,8 @@ export interface WorldScene {
   readonly collectibleSpots: Vector3[];
   /** walkable bounds */
   readonly bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+  /** ground height at a world position (for ramps/stairs); default 0 */
+  groundHeightAt?(x: number, z: number): number;
   /** add everything to the scene + set fog/background/lights */
   build(scene: Scene): void;
   /** per-frame ambient animation (neon flicker, water, etc.) */

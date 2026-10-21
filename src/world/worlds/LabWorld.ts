@@ -10,10 +10,10 @@ import { BaseWorld, type Interactable } from '../WorldScene';
 
 export class LabWorld extends BaseWorld {
   readonly key = 'agents' as const;
-  readonly spawn = new Vector3(0, 0, 8);
-  readonly interactable: Interactable = { key: 'agents', position: new Vector3(0, 0, -6), radius: 3.6, label: 'the terminal' };
+  readonly spawn = new Vector3(0, 0, 18);
+  readonly interactable: Interactable = { key: 'agents', position: new Vector3(0, 0, -12), radius: 3.6, label: 'the terminal' };
   readonly collectibleSpots = [new Vector3(-7, 0, 2), new Vector3(7, 0, 0), new Vector3(0, 0, 4)];
-  readonly bounds = { minX: -12, maxX: 12, minZ: -12, maxZ: 12 };
+  readonly bounds = { minX: -14, maxX: 14, minZ: -16, maxZ: 22 };
 
   build(scene: Scene) {
     this.setSky(scene, 0x080c14, 0x0a1420, 30, 100);
@@ -46,12 +46,12 @@ export class LabWorld extends BaseWorld {
     }
 
     // the terminal (the prop) on a lit pad
-    const pad = this.disc(3, this.mat(0x0a1626, 0.4, 0.3, 0x0d3350, 0.6)); pad.position.set(0, 0.03, -6); this.add(pad);
-    const base = this.box(1.6, 1, 1, this.mat(0x13233a, 0.6, 0.3)); base.position.set(0, 0.5, -6);
-    const col = this.box(0.4, 1.2, 0.4, this.mat(0x16314a)); col.position.set(0, 1.4, -6);
-    const scr = this.box(1.9, 1.15, 0.08, this.mat(0x071018, 0.4, 0, 0x38e8ff, 1.6)); scr.position.set(0, 2.2, -5.95);
+    const pad = this.disc(3, this.mat(0x0a1626, 0.4, 0.3, 0x0d3350, 0.6)); pad.position.set(0, 0.03, -12); this.add(pad);
+    const base = this.box(1.6, 1, 1, this.mat(0x13233a, 0.6, 0.3)); base.position.set(0, 0.5, -12);
+    const col = this.box(0.4, 1.2, 0.4, this.mat(0x16314a)); col.position.set(0, 1.4, -12);
+    const scr = this.box(1.9, 1.15, 0.08, this.mat(0x071018, 0.4, 0, 0x38e8ff, 1.6)); scr.position.set(0, 2.2, -11.95);
     this.add(base, col, scr);
-    const glow = new PointLight(0x38e8ff, 10, 14, 2); glow.position.set(0, 2.2, -5); this.addLight(scene, glow);
+    const glow = new PointLight(0x38e8ff, 10, 14, 2); glow.position.set(0, 2.2, -11); this.addLight(scene, glow);
     this.animated.push((_dt, t) => { (scr.material as MeshStandardMaterial).emissiveIntensity = 1.4 + 0.5 * Math.sin(t * 6); });
   }
 }
